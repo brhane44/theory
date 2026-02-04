@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ti">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Traffic Exam</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .loader {
+            border: 2px solid #e2e8f0;
+            border-top: 2px solid #6366f1;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .image-container { position: relative; overflow: hidden; background: #f1f5f9; }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body class="bg-slate-950">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback } = React;
+         
+
+        const Icon = ({ name, size = 24, className = "" }) => {
+            const [svgContent, setSvgContent] = useState(null);
+            useEffect(() => {
+                if (window.lucide && window.lucide.icons) {
+                    const icon = window.lucide.icons[name];
+                    if (icon) {
+                        const paths = icon.map(([tag, attrs]) => `<${tag} ${Object.entries(attrs).map(([k, v]) => `${k}="${v}"`).join(' ')}></${tag}>`).join('');
+                        setSvgContent(`<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}">${paths}</svg>`);
+                    }
+                }
+            }, [name, size, className]);
+            return svgContent ? <span className="inline-flex" dangerouslySetInnerHTML={{ __html: svgContent }} /> : null;
+        };
+
+        function App() {
+            const [allQuestions] = useState([
+                { q: "ደረጃ ንቡር ስኽራት (rattfylleri) ካብ ክንደይ ፕሮሚለ (‰) ይጅምር?", a: ["0.1 ‰", "0.2 ‰", "0.5 ‰", "1.0 ‰"], c: 1, prompt: "Police officer breathalyzer test night" },
+                { q: "ደረጃ ብርቱዕ ስኽራት (grovt rattfylleri) ካብ ክንደይ ፕሮሚለ (‰) ይጅምር?", a: ["0.5 ‰", "0.8 ‰", "1.0 ‰", "2.0 ‰"], c: 2, prompt: "Drunk driving scene high alert" },
+                { q: "ትሕቲ 15 ዓመት ንዘለዉ ህጻናት፡ ቀበቶ ናይ ምእሳር ሓላፍነት ናይ መን እዩ?", a: ["ናይቲ ህጻን", "ናይቲ ዘዋሪ", "ናይቲ ወላዲ (ኣብታ መኪና እንተሃልዩ ጥራይ)", "ሓላፍነት የለን"], c: 1, prompt: "Child in car seat buckle" },
+                { q: "ኣብ ክረምቲ (ካብ 1 ታሕሳስ ክሳብ 31 መጋቢት) ዝተሓተ ዓሚቝ ስፌት (mönsterdjup) ጎማ ክንደይ ክኸውን ኣለዎ?", a: ["1.6 mm", "3.0 mm", "4.0 mm", "1.0 mm"], c: 1, prompt: "Winter tire tread depth measure" },
+                { q: "ኣብ ሓጋይ (Sommar) ዝተሓተ ዓሚቝ ስፌት ጎማ ክንደይ ክኸውን ኣለዎ?", a: ["1.0 mm", "1.6 mm", "3.0 mm", "4.0 mm"], c: 1, prompt: "Summer tire tread depth" },
+                { q: "ጎማታት ብስማር (Dubbdäck) ምጥቃም ካብ መዓስ ክሳብ መዓስ ክልኩል እዩ (ኩነታት ኣየር ጽቡቕ እንተኾይኑ)?", a: ["1 ጥቅምቲ - 15 ሚያዝያ", "16 ሚያዝያ - 30 መስከረም", "1 ታሕሳስ - 31 መጋቢት", "ምሉእ ዓመት ፍቁድ እዩ"], c: 1, prompt: "Studded tires road sign" },
+                { q: "መኪናኻ ደው ኣቢልካ ክትወርድ ከለኻ፡ መፍትሕ ኣብታ መኪና ክትሓድጎ ፍቁድ ድዩ?", a: ["እወ፡ እታ መኪና ተዓጽያ እንተሃልያ", "እወ፡ ንሓጺር ግዜ ጥራይ እንተኾይኑ", "ኣይፋልን፡ ብሕጊ ክልኩል እዩ", "እወ፡ ህጻናት ኣብታ መኪና እንተዘይሃልዮም"], c: 2, prompt: "Empty car with keys in ignition" },
+                { q: "ኣብ ከባቢ መሳገሪ እግረኛታት (övergångsställe) ክንደይ ሜትሮ ቅድሚኡ ደው ምባል ወይ ፓርክ ምግባር ክልኩል እዩ?", a: ["5 ሜትሮ", "10 ሜትሮ", "15 ሜትሮ", "20 ሜትሮ"], c: 1, prompt: "Pedestrian crossing parking rule" },
+                { q: "ሓደ ህጻን ኤርባግ (krockkudde) ኣብ ዘለዎ ናይ ቅድሚት ኮፍ መበሊ ክቕመጥ ዝኽእል፡ ቁመቱ እንተወሓደ ክንደይ ምስ ዝኸውን እዩ?", a: ["135 ሴ.ሜ", "140 ሴ.ሜ", "150 ሴ.ሜ", "120 ሴ.ሜ"], c: 1, prompt: "Child height car safety front seat" },
+                { q: "ኣብ ጽርግያ ባቡር መሳገሪ (plankorsning) ዘሎ ጻዕዳ መብራህቲ እንታይ የመልክት?", a: ["ባቡር ስለዘየለ ብነጻነት ሕለፍ", "ባቡር ትመጽእ ስለዘላ ደው በል", "ደው ኢልካ ባቡር ከምዘየላ ኣረጋግጽ፡ እቲ መብራህቲ ንጥንቃቐ ጥራይ እዩ", "እቲ መሳገሪ ተዓጽዩ ኣሎ"], c: 2, prompt: "Railway crossing white light" },
+                { q: "ኣብ ሞቶር ወይ (motorväg) ክትዝውር ከለኻ እንታይ ምግባር ክልኩል እዩ?", a: ["ምቕዳም (Omkörning)", "ምጥቃም ጂፒኤስ (GPS)", "ንድሕሪት ምምላስ (Backa) ወይ ዩ-ተርን ምግባር", "ብፍጥነት 110 ኪ.ሜ/ሰዓት ምዝዋር"], c: 2, prompt: "Motorway road illegal u-turn" },
+                { q: "ሓደጋ ምስ ዝጋጥም፡ ቀዳማይ ረድኤት (LABC) ብኸመይ ይስራዕ?", a: ["ካንሰር-ሕማም-ርእሲ-ልቢ", "ህይወት-ምትንፋስ-ደም-ድንጋጸ (Chock)", "ደም-ምትንፋስ-ድንጋጸ-ህይወት", "ምላሽ-ደወል-ሓገዝ-ፈተና"], c: 1, prompt: "First aid scene emergency" },
+                { q: "ካብ ጽርግያ ዓዲ ወጻኢ (landsväg) ናብ ጸጋም ክትጥወ ከለኻ ዘሎ ሓደጋ እንታይ እዩ?", a: ["ካብ ቅድሚት ዝመጻ መካይን ክሃርማኻ ምኽኣለን", "ካብ ድሕሪት ዝመጻ መካይን ብከቢድ ፍጥነት ክሃርማኻ ምኽኣለን", "ሓደጋ የለን", "እታ መኪና ክትጠፍእ ስለትኽእል"], c: 1, prompt: "Country road left turn danger" },
+                { q: "ንሓደ እግረኛ ንክትሓልፍ ክትዕድሞ ከለኻ ብኢድካ ክትጥቅሰሉ ትኽክል ድዩ?", a: ["እወ፡ ንዕኡ ስለ ዝሕግዞ", "ኣይፋልን፡ ሓሶት ድሕነት (falsk trygghet) ስለ ዝፈጥረሉ", "እወ፡ ተሽከርካሪት ካልእ ስለዘየለ", "ጥራይ ኣብ ዓቢ ከተማ"], c: 1, prompt: "Driver waving at pedestrian" },
+                { q: "ናይ ምላሽ ግዜ (reaktionstid) ብምንታይ ክነውሕ ይኽእል? ", a: ["ብብቕዓት ጎማታት", "ብጽቡቕ ኩነታት ኣየር", "ብመንጽር ድካም፡ ኣልኮል ወይ መድሃኒት", "ብሓድሽ መኪና"], c: 2, prompt: "Tired driver blurry vision" },
+                { q: "ናይ ምንጽርጻር ርሕቀት (bromssträcka) ፍጥነት ብዕጽፊ እንተወሲኹ ክንደይ ይውስኽ?", a: ["ብዕጽፊ (2 ግዜ)", "ብሰለስተ ግዜ", "ብኣርባዕተ ግዜ (4 ግዜ)", "ኣይውስኽን እዩ"], c: 2, prompt: "Braking car skid marks" },
+                { q: "ኣብ ሓደ ዙረት (cirkulationsplats) ክትወጽእ ከለኻ ምልክት (blinkers) ክትጥቀም ኣለካ ድዩ?", a: ["ኣይፋልን፡ ትኽ ኢልካ እንተወጺኻ", "እወ፡ ኩሉ ግዜ ናብ የማን ክትጥወ ከለኻ (ክትወጽእ ከለኻ)", "ጥራይ ናብ ጸጋም ክትጥወ እንተኾይንካ", "ጥራይ መካይን እንተሃልየን"], c: 1, prompt: "Roundabout car exit signal" },
+                { q: "ብፍጥነት 50 ኪ.ሜ/ሰዓት ወይ ትሕቲኡ ኣብ ዘለዎ ጽርግያ፡ ኣውቶቡስ ምልክት ሂባ ካብ ደው መበሊኣ ክትወጽእ እንተደልያ እንታይ ክትገብር ኣለካ?", a: ["ቀዲምካያ ሕለፍ", "ደው ኢልካ መገዲ ሃባ", "ብጸጋም ሸነኽ ሓልፋ", "ናይ ቀዳምነት መሰል ኣለካ"], c: 1, prompt: "Bus leaving stop city road" },
+                { q: "ምልክት የማን ሕጊ (högerregeln) ዘይሰርሓሉ መዓስ እዩ?", a: ["ኣብ ጽርግያታት ከተማ", "ኣብ ቀንዲ መገዲ (huvudled) ክትከይድ ከለኻ", "ኣብ ክፉት ቦታታት", "ኣብ ናይ ጽርግያ መላገቦታት"], c: 1, prompt: "Priority road sign intersection" },
+                { q: "ናይ ምንጽርጻር ሓገዝ (ABS-bromsar) ቀንዲ ጥቕሙ እንታይ እዩ?", a: ["ንፍጥነት መኪና ንምውሳኽ", "ኣብ እዋን ሓይሊ ዘለዎ ምንጽርጻር፡ መኪናኻ ናይ ምቁጽጻር (ምጥዋይ) ዓቕሚ ንክህልወካ", "ነዳዲ ንምቁጣብ", "ጎማታት ንከይበልዩ"], c: 1, prompt: "ABS braking car control steering" },
+                { q: "ብመሰረት 'Nollvisionen'፡ መን እዩ እቲ ዝዓበየ ተሓታቲ ንውሕስነት ትራፊክ?", a: ["እቶም ዘዋወርቲ ጥራይ", "እቶም ናይ መገዲ ዲዛይነርን ፖሊስን", "መንግስቲ ጥራይ", "እቶም መካይን ዝሰርሑ ኩባንያታት"], c: 1, prompt: "Traffic safety vision Zero" },
+                { q: "ኣብ መሳገሪ ባቡር መኪናኻ እንተተበላሽያ፡ እንታይ ክትገብር ኣለካ?", a: ["ወጺእካ ሓገዝ ክሳብ ዝመጽእ ተጸበ", "ብዝተኻእለ ፍጥነት ነታ መኪና ካብቲ መሳገሪ ኣውጽኣያ (እንተተገዲድካ ነቲ ዓንቀጽ ሰይርካ ሕለፍ)", "ፖሊስ ጥራይ ደውል", "ንባቡር ምልክት ሃብ"], c: 1, prompt: "Stuck car on railroad tracks" },
+                { q: "ምሉእ ብምሉእ ነዳዲ ዘይጥቀም ኣገባብ ምዝዋር (Motorbromsning) መዓስ እዩ ዝኸውን?", a: ["እግሪ ካብ ጋዝ ኣልዒልካ፡ RPM ልዕሊ 1200-1300 ክኸውን ከሎ", "ፍሬኖ ምስ እትሕዝ", "ኣብ ቁልቁል ጥራይ", "ኩሉ ግዜ ሞተር ክሰርሕ ከሎ"], c: 0, prompt: "Engine braking dashboard RPM" },
+                { q: "ናይ መኪና ባተርቲ (Bilbatteri) ዘለዎ ፈሳሲ እንታይ ዓይነት እዩ?", a: ["ማይ ጥራይ", "ዘይቲ", "ዝበላላዕ ኣሲድ (frätande syra)", "ጋዝ"], c: 2, prompt: "Car battery acid warning" },
+                { q: "ከቢድ መኪና (Tung lastbil) ኣብ ሞቶር ወይ ዝለዓለ ፍጥነቱ ክንደይ ክኸውን ይፍቀድ?", a: ["80 ኪ.ሜ/ሰዓት", "90 ኪ.ሜ/ሰዓት", "100 ኪ.ሜ/ሰዓት", "110 ኪ.ሜ/ሰዓት"], c: 1, prompt: "Heavy truck highway speed" },
+                { q: "ኣብ ሓደ መኪና ዝተጻዕነ ጽዕነት ናብ ጎኒ (sidled) ክሳብ ክንደይ ክወጽእ ይፍቀድ?", a: ["10 ሴ.ሜ", "20 ሴ.ሜ", "50 ሴ.ሜ", "ፈጺሙ ኣይፍቀድን"], c: 1, prompt: "Car load width limit" },
+                { q: "ጠቕላላ ስፍሓት መኪና ምስ ጽዕነታ ካብ ክንደይ ክበልጽ የብሉን?", a: ["240 ሴ.ሜ", "260 ሴ.ሜ", "300 ሴ.ሜ", "220 ሴ.ሜ"], c: 1, prompt: "Wide car load measure" },
+                { q: "ኣብ ጽርግያ ሃገር (landsväg)፡ ሓደ መኪና ንድሕሪት ኣዝዩ ቀሪቡካ እንተመጺኡ እንታይ ክትገብር ይሓይሽ?", a: ["ፍጥነትካ ወስኽ", "ሃንደበት ፍሬኖ ሓዝ", "ንቕድሚት ዘሎ ርሕቀት ኣዕብዮ (ንኸይትጭነቕ)፡ እንተተኻኢሉ ድማ መገዲ ሃቦ", "መብራህቲ ድሕሪት ኣብርሃሉ"], c: 2, prompt: "Tailgating car rear mirror" },
+                { q: "ናይ ትራፊክ መድሕን (Trafikförsäkring) እንታይ ዓይነት ክሳራ እያ ዘይትሽፍን?", a: ["ንኻልኦት ዝበጽሕ ክሳራ", "ንሰብ ዝበጽሕ ጉድኣት", "ኣብ ገዛእ ርእስኻ መኪና ዝበጽሕ ክሳራ", "ንናይ መንግስቲ ንብረት"], c: 2, prompt: "Car insurance damage claim" },
+                { q: "ምልክት 'Gångfartsområde' (ናይ ስጉምቲ ቦታ) እንታይ ትእዛዝ ኣለዎ?", a: ["ፍጥነት 30 ኪ.ሜ/ሰዓት", "ንእግረኛታት ቀዳምነት ምሃብን ብፍጥነት ስጉምቲ (7 ኪ.ሜ/ሰዓት) ምዝዋርን", "መካይን ምእታው ክልኩል እዩ", "ጥራይ ብቐትሪ ይዓዪ"], c: 1, prompt: "Shared space pedestrian priority" },
+                { q: "ካታሊዘተር (Katalysator) እንታይ እዩ ስርሑ?", a: ["ነዳዲ ይቆጥብ", "ንመኪና ሓይሊ ይውስኽ", "ካብ ሞተር ዝወጽእ ጎዳኢ ጋዝ ብ 80-95% ይቕንስ", "ንድምጺ ሞተር የህድእ"], c: 2, prompt: "Car exhaust catalytic converter" },
+                { q: "ኣብ ሞቶር ወይ (motorväg) መኪናኻ ተበላሽያ ክትጉተ (bogsera) ፍቁድ ድዩ?", a: ["እወ፡ ክሳብ ቀጻሊ መውጽኢ (avfart)", "ኣይፋልን፡ ብፍጹም ክልኩል እዩ", "እወ፡ ናይ መጠንቀቕታ መብራህቲ እንተወሊዕካ", "እወ፡ ፖሊስ እንተፈቒዶም"], c: 0, prompt: "Towing car on highway" },
+                { q: "ናይ ሞተር መሞቒ (Motorvärmare) ኩነታት ኣየር 0°C እንተኾይኑ፡ ክንደይ ግዜ ቅድሚ ምብጋስካ ክትውልዖ ኣለካ?", a: ["30 ደቒቕ", "60 ደቒቕ (1 ሰዓት)", "90 ደቒቕ", "15 ደቒቕ"], c: 1, prompt: "Engine heater cord winter" },
+                { q: "ሓደ ሰብ ተሓኪሙ ዝወሰዶ መድሃኒት፡ ንኣዘዋውርኡ ሓደገኛ እንተኾይኑ ተሓታቲ መን እዩ?", a: ["እቲ ሓኪም", "እቲ ፋርማሲስት", "እቲ ዘዋሪ (ባዕሉ)", "መንግስቲ"], c: 2, prompt: "Driver reading medicine label" },
+                { q: "ኣብ ጽርግያ ዝርከቡ ናይ ኣንፈት ምልክታት (kantstolpar)፡ ኣብ ጸጋም ሸነኽ ዘለዉ ከመይ እዮም?", a: ["ርብዒ ኩርናዕ (rectangulära)", "ክቢ (runda)", "ሰለስተ ኩርናዕ", "ምልክት የብሎምን"], c: 1, prompt: "Road side markers night" },
+                { q: "ከመይ ዝበለ ምዝዋር እዩ ነዳዲ ዝቆጥብ?", a: ["ብትሑት ጊየር (low gear) ምዝዋር", "ቀልጢፍካ ጊየር ምቕያር (High gear ምጥቃም)", "ሃንደበት ብምጽቃጥ", "ብተደጋጋሚ ፍሬኖ ብምሓዝ"], c: 1, prompt: "Eco driving gears" },
+                { q: "ኣብ ጽርግያ ሃገር (landsväg) ናይ የማን ጥውያ ክትገብር ከለኻ፡ ንደሕሪትካ ዘለዉ መካይን ንምሕጋዝ እንታይ ክትገብር ትኽእል?", a: ["መገዲ ሰይርካ የማን ውጻእ (vägrenen)", "ደው በል", "መብራህቲ ህጹጽ ግዜ ኣብርህ", "ፍጥነትካ ወስኽ"], c: 0, prompt: "Car using road shoulder for turn" },
+                { q: "ኣብ ጸልማት ክትዝውር ከለኻ፡ ንዝመጹኻ መካይን ንከይትዕወር ኣበይ ክትጥምት ኣለካ?", a: ["ነቲ ዝመጽእ ዘሎ መብራህቲ", "ናይ የማን ወሰን ጽርግያ", "ናይ ጸጋም ወሰን ጽርግያ", "ኣዒንትካ ዓሚጽካ"], c: 1, prompt: "Dazzling headlights night road" },
+                { q: "ካብዞም ዝስዕቡ ናይ ድካም ምልክት (trötthet) ዘይኮነ ኣየናይ እዩ?", a: ["ምምላቕ ኣፍ (Gäspningar)", "ቆሪርካካ ምርዓድ", "ዓይኒ ምሕካክ", "ጽቡቕ ርእይቶ"], c: 3, prompt: "Fatigue symptoms driver" },
+                { q: "ኣብ ከተማ፡ ፓርክ ክትገብር ከለኻ ጎማታትካ ናብ ኣንፈት እቲ ከርብ (kantsten) ክትጥውዮም ዘለካ መዓስ እዩ?", a: ["ኣብ ቁልቁል (nedförsbacke)", "ኣብ ዓቐበት", "ኩሉ ግዜ", "ፈጺሙ ኣይድለን"], c: 0, prompt: "Parking on hill wheels turned" },
+                { q: "ኣብ ጽርግያ ዘሎ ምልክት 'STOP' እንታይ ማለት እዩ?", a: ["መካይን እንተሃልየን ጥራይ ደው በል", "ፍጥነትካ ቀንጽ", "ኩሉ ግዜ ደው ክትብል ኣለካ (ሓጺር ሰኮንድ እውን እንተኾነ)", "ቀስ ኢልካ ሕለፍ"], c: 2, prompt: "Stop sign stop line" },
+                { q: "ናይ መኪና ፍሬኖ ክትፍትሽ ከለኻ፡ እቲ ፔዳል ንታሕቲ ቀስ ኢሉ እንተሰሚጡ እንታይ ጸገም ኣለዎ ማለት እዩ?", a: ["ኣየር ኣለዎ", "ፈሳሲ ይፈስስ ኣሎ (läckage)", "ፍሬኖ ተበላሽዩ", "ጸገም የብሉን"], c: 1, prompt: "Pressing brake pedal low" },
+                { q: "ኣብ ሓደ መገዲ ባቡር፡ እቲ ቀይሕ መብራህቲ ምስ ጠፈአ ግን ድማ እቲ ዓንቀጽ (bommar) ገና ከይተልዓለ ክትሓልፍ ፍቁድ ድዩ?", a: ["እወ፡ መብራህቲ ስለ ዝጠፈአ", "ኣይፋልን፡ እቲ ዓንቀጽ ምሉእ ብምሉእ ክሳብ ዝለዓል ክትጽበ ኣለካ", "እወ፡ ባቡር እንተዘየለ", "ጥራይ ንሽክለታ"], c: 1, prompt: "Railway bars lifting" },
+                { q: "ካብዞም ዝስዕቡ ነዳዲ ንምቁጣብ ዘይሕግዝ ኣየናይ እዩ?", a: ["ትሑት ጸቕጢ ኣየር ጎማ", "ናይ ናሕሲ ሳንዱቕ (takbox) ምእላይ", "መስኮት ዓጺኻ ምዝዋር", "ኤርኮንድሽን (AC) ምጥፋእ"], c: 0, prompt: "Low tire pressure gas station" },
+                { q: "ኣብ ሓደ ጽርግያ ክልተ ዝተፈላለዩ ምልክታት (ንኣብነት ፖሊስን መብራህቲ ትራፊክን) እንተሃልዮም ንመን ክትሰምዕ ኣለካ?", a: ["ንመብራህቲ ትራፊክ", "ንናይ ጽርግያ ምልክታት", "ንትእዛዝ ፖሊስ", "ንሕጊ የማን"], c: 2, prompt: "Police officer directing traffic" },
+                { q: "ብፍጥነት 70 ኪ.ሜ/ሰዓት ክትዝውር ከለኻ፡ ሓደ ባልጩቕ (stenskott) እንተሃሪሙካ ክንደይ ሜትሮ ትጎዓዝ?", a: ["20 ሜትሮ ኣብ ሰኮንድ", "30 ሜትሮ ኣብ ሰኮንድ", "10 ሜትሮ ኣብ ሰኮንድ", "50 ሜትሮ ኣብ ሰኮንድ"], c: 0, prompt: "Car speed 70kmh scene" },
+                { q: "ኣብ ጽርግያ ዝርከብ ሰማያዊ ምልክት 'P' እንታይ ማለት እዩ?", a: ["ን 1 ሰዓት ጥራይ ፓርክ ግበር", "ብናጻ ን 24 ሰዓታት (ኣብ ስራሕ መዓልታት) ፓርክ ክትገብር ትኽእል", "ንነባሮ ጥራይ እዩ", "ፓርክ ምግባር ክልኩል እዩ"], c: 1, prompt: "Blue parking sign P" },
+                { q: "ጎማታት መኪናኻ ኣዝዮም ዝበለዩ (slitna) እንተኾይኖም፡ እንታይ ክውስኽ ይኽእል?", a: ["ናይ ምላሽ ግዜ (reaktionstid)", "ሓደጋ ማይ-ምሕንባስ (vattenplaning)", "ፍጥነት መኪና", "ናይ ባተርቲ ዓቕሚ"], c: 1, prompt: "Worn out tire wet road" },
+                { q: "መኪና ክትዝውር ከለኻ ሞባይልካ ብኢድካ ሒዝካ ክትጥቀም ፍቁድ ድዩ?", a: ["እወ፡ ጽቡቕ ጌርካ እንተሒዝካዮ", "ኣይፋልን፡ ብሕጊ ክልኩል እዩ", "እወ፡ መካይን እንተዘየለ", "እወ፡ ብስፒከር እንተኾይኑ"], c: 1, prompt: "Holding phone while driving" },
+                { q: "መኪና ክትዝውር ከለኻ ናይ ምርኣይ ዓቕምኻ (synfält) ዝጸብብ መዓስ እዩ?", a: ["ብቕዓትካ ክውስኽ ከሎ", "ስትረስ (stress) ወይ ፍጥነት ክውስኽ ከሎ", "መነጽር እንተገይርካ", "ብቐትሪ"], c: 1, prompt: "Tunnel vision stress driving" },
+                { q: "ምልክት 'Cykelöverfart' (መሳገሪ ብሽክለታ) ምስ ዝህሉ፡ ተሓታቲ መን እዩ?", a: ["እቲ ብሽክለታ ዝዝውር", "እቲ መኪና ዝዝውር (መገዲ ክህብ ኣለዎ)", "ክልቲኦም ማዕረ እዮም", "ፖሊስ"], c: 1, prompt: "Bicycle crossing sign" },
+                { q: "ኣብ ጽርግያ ዝርከብ ቀይሕ ሰለስተ ኩርናዕ (varningstriangel) ካብ መኪናኻ ክንደይ ርሒቑ ክቕመጥ ኣለዎ (ፍጥነት ልዕሊ 50 እንተኾይኑ)?", a: ["10-20 ሜትሮ", "50-100 ሜትሮ", "200 ሜትሮ", "ኣብ ጥቓ መኪና"], c: 1, prompt: "Warning triangle on road" },
+                { q: "ኣብ ስዊድን ኣብ ውሽጢ ዓመት ብሓደጋ ትራፊክ ብገምጋም ክንደይ ሰብ ይመውት?", a: ["100 ሰብ", "200-230 ሰብ", "500 ሰብ", "1000 ሰብ"], c: 1, prompt: "Traffic safety data chart" },
+                { q: "ኣብ ውሽጢ መኪና ኮፍ ኢልካ ክትዝውር ከለኻ፡ ካብቲ ኤርባግ (Airbag) ክንደይ ክትርሕቕ ኣለካ?", a: ["10 ሴ.ሜ", "25 ሴ.ሜ", "50 ሴ.ሜ", "ርሕቀት ኣየድልን"], c: 1, prompt: "Driver seat distance airbag" },
+                { q: "መኪና ክትዕድግ ከለኻ 'Euro 6' እንታይ የመልክት?", a: ["ናይ ሞተር ሓይሊ", "ናይ ፍጥነት ደረጃ", "ናይ ከባቢ ኣየር ጽሬት ደረጃ (ዝተሓተ ብከላ)", "ናይ መኪና ክብደት"], c: 2, prompt: "Car eco emissions Euro 6" },
+                { q: "ካብዞም ዝስዕቡ ኣየናይ እዩ 'Defensiv körning' (ጥንቁቕ ኣዘዋውራ) ዝገልጽ?", a: ["ቀልጢፍካ ምዝዋር", "መገዲ ንዘይሃቡኻ ምጭቃቕ", "ንድሕሪት ምጥማትን ንሓደጋታት ምግማትን", "ኩሉ ግዜ ቀዳምነት ምሓዝ"], c: 2, prompt: "Safe distance defensive driving" },
+                { q: "ኣብ ጽርግያ ሃገር (landsväg) ዘሎ ርሕቀት ኣብ መንጎ ክልተ ኣዕማድ (kantstolpar) ክንደይ ሜትሮ እዩ?", a: ["25 ሜትሮ", "50 ሜትሮ", "100 ሜትሮ", "10 ሜትሮ"], c: 1, prompt: "Road markers 50m distance" },
+                { q: "ኣብ ሓደ ጽርግያ 'Huvudled' (ቀንዲ መገዲ) ዝብል ምልክት እንተሃልዩ፡ እቶም ካብ ጎኒ ዝመጹ መካይን እንታይ ግዴታ ኣለዎም?", a: ["ናይ የማን ሕጊ ክጥቀሙ", "መገዲ ክህቡኻ (Väjningsplikt)", "ማዕረ መሰል ኣለዎም", "ቀልጢፎም ክሓልፉ"], c: 1, prompt: "Give way road sign" },
+                { q: "መኪና ክትዝውር ከለኻ፡ ፐሪፈራል ቪዥን (periferiseende) ክንደይ ካብቲ ትርኢትካ ይሽፍን?", a: ["1-2 %", "50 %", "98-99 %", "10 %"], c: 2, prompt: "Human vision peripheral view" },
+                { q: "ናይ ምቕዳም (Omkörning) ክልኩል ዝኾነሉ ቦታ ኣየናይ እዩ?", a: ["ኣብ ሞቶር ወይ", "ቅድሚ ዘይተሓለወ መሳገሪ እግረኛታት", "ኣብ ክፉት መገዲ", "መኪና ጸጋም ምልክት እንተሂባ"], c: 1, prompt: "No overtaking sign pedestrian" },
+                { q: "ኣብ ሓደ መኪና ዝርከብ 'Registreringsbevis del 2' (ናይ ወናኒ ወረቐት) ኣበይ ክቕመጥ ኣለዎ?", a: ["ኣብ ውሽጢ መኪና (Handskfacket)", "ኣብ ውሕስነት ዘለዎ ቦታ ኣብ ገዛ", "ኣብ ፖርትፎሊዮ", "ኣብ መካኒክ"], c: 1, prompt: "Car registration document blue" },
+                { q: "መኪናኻ 'Besiktning' (መርመራ) ክትገብር ዘለካ መዓስ እዩ?", a: ["ኩሉ ግዜ ኣብ ወርሒ ጥሪ", "ከምቲ እቲ ናይ መርመራ ወረቐት ዝእዝዞ", "ኣብ ሰለስተ ዓመት ሓንሳብ ጥራይ", "መኪና ምስ ተበላሸወት ጥራይ"], c: 1, prompt: "Car inspection center Sweden" },
+                { q: "ሓደ ሰብ ንመኪናኻ ካብ ድሕሪት እንተሃሪሙካ፡ እንታይ ዓይነት ጉድኣት ኣብ ክሳድካ ክበጽሕ ይኽእል?", a: ["ናይ ርእሲ ሕማም", "ዊፕላሽ (Whiplash)", "ስባር ኣእጋር", "ጉድኣት ኣዒንቲ"], c: 1, prompt: "Rear end collision impact" },
+                { q: "ንሓደ ዝተጐድአ ሰብ ማይ ክትውሕጦ ምሃብ ጽቡቕ ድዩ?", a: ["እወ፡ ንምርጋእ ይሕግዞ", "ኣይፋልን፡ ክትህቦ የብልካን (ብፍላይ ድማ ጽንኩር ኩነታት እንተሃልዩ)", "ጥራይ ጸማእ እንተኾይኑ", "እወ፡ ደም እንተፈሲስዎ"], c: 1, prompt: "Accident victim water danger" },
+                { q: "ኣብ ጽርግያ ዝርከብ ምልክት 'ተሽከርካሪት ጽዕነት ዘለዎም ክሓልፉ ኣይፍቀድን' ንመን ይምልከት?", a: ["ንኩሎም መካይን", "ንከቢድ መኪና (Tung lastbil) ጥራይ", "ንፓሰንጀር መኪና", "ንብሽክለታ"], c: 1, prompt: "No trucks road sign" },
+                { q: "መኪናኻ ክትዝውር ከለኻRPM ልዕሊ ክንደይ ክሓልፍ የብሉን (ነዳዲ ንምቁጣብ)?", a: ["1000 RPM", "2500 RPM", "4000 RPM", "5000 RPM"], c: 1, prompt: "Eco driving RPM 2500" },
+                { q: "መኪናኻ ትሕቲ ክንደይ ፍጥነት ክትከይድ እንተኾይና እያ ኣብ ሞቶር ወይ (motorväg) ክትኣቱ ዘይፍቀዳ?", a: ["30 ኪ.ሜ/ሰዓት", "40 ኪ.ሜ/ሰዓት", "50 ኪ.ሜ/ሰዓት", "60 ኪ.ሜ/ሰዓት"], c: 1, prompt: "Minimum speed sign highway" },
+                { q: "ኣብ ጸልማት (mörkerkörning)፡ ሓደ ሰብ ጸሊም ክዳን ተኸዲኑ እንተሃልዩ፡ ብሓጺር መብራህቲ (halvljus) ካብ ክንደይ ሜትሮ ክትርእዮ ትኽእል?", a: ["25 ሜትሮ", "60 ሜትሮ", "150 ሜትሮ", "450 ሜትሮ"], c: 0, prompt: "Pedestrian dark clothes night" },
+                { q: "ኣብ ሓደ ጽርግያ 'Spansk sväng' (ስጳንኛ ጥውያ) ዝበሃል እንታይ ማለት እዩ?", a: ["ቀጥታ ናብ ጸጋም ምጥዋይ", "መጀመርታ የማን ወጺእካ ደሓር ጽርግያ ምቁራጽ", "ብፍጥነት ምጥዋይ", "ኣብ ዓቢ ዙረት ምጥዋይ"], c: 1, prompt: "Spanish turn road layout" },
+                { q: "ኣብ በረድ (Halka) ክትዝውር ከለኻ፡ ኣየናይ ዝያዳ ሓደገኛ እዩ?", a: ["ምሉእ ብምሉእ በረድ ዝመልኦ ጽርግያ", "ቦታ ቦታ ዘሎ በረድ (Fläckvis halka)", "ጽሩይ ጽርግያ", "ዝናብ"], c: 1, prompt: "Black ice on asphalt road" }
+            ]);
+
+            const [currentIdx, setCurrentIdx] = useState(0);
+            const [currentStep, setCurrentStep] = useState('start');
+            const [imageCache, setImageCache] = useState({});
+            const [loadingMap, setLoadingMap] = useState({});
+            const [answerStatus, setAnswerStatus] = useState(null);
+            const [userAnswers, setUserAnswers] = useState({});
+
+            
+            const imageMapping = {"0": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/xeSovpuHDFSUHMjD.jpg", "1": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/xmQiiPPllAkYvIYB.jpg", "2": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/ouDFDzinJuPkXgim.jpg", "3": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/pGoZHOWxLmwptuKG.jpg", "4": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/GyPmeUlmntXoXAww.jpg", "5": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/yHrekdkZbtWObMee.jpg", "6": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/yaXuADsshUYRiKFo.jpg", "7": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/FcrxosMBpSNCWuOj.jpg", "8": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/WHYTYgdudQQTEyYb.jpg", "9": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/huKtzigufWvingTi.jpg", "10": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/jwgtTwvURPtAonXq.jpg", "11": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/KxvJELBPfbsjeBFm.jpg", "12": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/jREOSOUCLmyboGRS.jpg", "13": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/NqGpdFHVkLrvoPSF.jpg", "14": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/vDkebaHQwNTpKKds.jpg", "15": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/KSoLzOOjlnwDlmfO.jpg", "16": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/JAvhmUUihPAXpYfz.jpg", "17": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/eLztzPzxDiEvcxgN.jpg", "18": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/GDObTfRcQhsJaNeP.jpg", "19": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/IHzTGTEVRZibLAwl.jpg", "20": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/JfIZBuWtHIMpCDLR.jpg", "21": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/vKIqmgGqxXBOTWzX.jpg", "22": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/dtOeMjpXcHVzxJjs.jpg", "23": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/muhnJgnPjEvltiAw.jpg", "24": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/XUogbshPmmmQaLZY.jpg", "25": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/ZoeAotWRxCzYvOrO.jpg", "26": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/MNIVYIVMIUTQcDwm.jpg", "27": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/djcERHPDAfjdfhKP.jpg", "28": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/UpNpKytECKRGlQfb.jpg", "29": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/HkbxqvufhUEqvwRj.jpg", "30": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/teFWTesFBUqSmRXO.jpg", "31": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/MeeNRssxrLMwllRm.jpg", "32": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/xmmSVjWkQEolykBh.jpg", "33": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/kPNqdhczXWRSXszL.jpg", "34": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/MEpqRodXkMZwgLNl.jpg", "35": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/frmZoMJndGsOAxuG.jpg", "36": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/RwnMBOabSxewuqvv.jpg", "37": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/CjLnzcGNQqAmOTJH.jpg", "38": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/TVAjYyuKZcNxeGqp.jpg", "39": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663080451739/LqulxSuPyGCWJUbQ.jpg"};
+
+            const fetchImage = useCallback(async (idx) => {
+                if (imageCache[idx] || loadingMap[idx] || idx >= allQuestions.length) return;
+
+                if (imageMapping[idx]) {
+                    setImageCache(prev => ({ ...prev, [idx]: imageMapping[idx] }));
+                    return;
+                }
+
+                // Fallback for missing images
+                setLoadingMap(prev => ({ ...prev, [idx]: true }));
+                try {
+                    // Use a placeholder service for indices without generated images
+                    const prompt = encodeURIComponent(allQuestions[idx].prompt);
+                    const placeholderUrl = `https://placehold.co/600x400/0f172a/ffffff?text=${prompt}`;
+                    setImageCache(prev => ({ ...prev, [idx]: placeholderUrl }));
+                } catch (e) {
+                    console.error("Image failed", e);
+                } finally {
+                    setLoadingMap(prev => ({ ...prev, [idx]: false }));
+                }
+            }, [imageCache, loadingMap, allQuestions]);
+
+
+            // Prefetch current, next, and next-next for maximum speed
+            useEffect(() => {
+                if (currentStep === 'quiz') {
+                    fetchImage(currentIdx);
+                    fetchImage(currentIdx + 1);
+                    fetchImage(currentIdx + 2);
+                }
+            }, [currentIdx, currentStep, fetchImage]);
+
+            
+            if (currentStep === 'payment') {
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-6 bg-slate-950">
+                        <div className="max-w-md w-full bg-white rounded-[3rem] p-12 text-center shadow-2xl">
+                            <div className="w-20 h-20 bg-yellow-500 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg">
+                                <Icon name="Lock" size={40} className="text-white" />
+                            </div>
+                            <h1 className="text-3xl font-black mb-4">ውጽኢት ንምርኣይ</h1>
+                            <p className="text-slate-500 mb-10">ናይ መወዳእታ ውጽኢትካ ንምርኣይ 10 kr ክትከፍል ኣለካ።</p>
+                            <a 
+                                href="https://www.paypal.com/ncp/payment/NS9CVF3VQ5ATS"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={() => setTimeout(() => setCurrentStep('results'), 3000)}
+                                className="block w-full bg-indigo-600 text-white font-bold py-5 rounded-2xl text-xl shadow-xl active:scale-95 transition-all mb-4"
+                            >
+                                ሕጂ ክፈል (10 kr)
+                            </a>
+                            <p className="text-[10px] text-slate-400">ምስ ከፈልካ ውጽኢትካ ብቀጥታ ክርኣየካ እዩ።</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (currentStep === 'results') {
+                const score = allQuestions.reduce((acc, q, i) => acc + (userAnswers[i] === q.c ? 1 : 0), 0);
+                const passed = score >= (allQuestions.length * 0.8);
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-6 bg-slate-950">
+                        <div className="max-w-md w-full bg-white rounded-[3rem] p-12 text-center shadow-2xl">
+                            <div className={`w-20 h-20 ${passed ? 'bg-green-500' : 'bg-red-500'} rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg`}>
+                                <Icon name={passed ? "CheckCircle" : "XCircle"} size={40} className="text-white" />
+                            </div>
+                            <h1 className="text-3xl font-black mb-4">{passed ? "እንኳዕ ተሓጐስካ!" : "እንደገና ፈትን"}</h1>
+                            <p className="text-5xl font-black text-indigo-600 mb-4">{score} / {allQuestions.length}</p>
+                            <p className="text-slate-500 mb-10">{passed ? "ነቲ ፈተና ብዓወት ሓሊፍካዮ ኣለኻ።" : "ንሕልፈት 80% ክትረክብ ኣለካ።"}</p>
+                            <button 
+                                onClick={() => window.location.reload()} 
+                                className="w-full bg-slate-900 text-white font-bold py-5 rounded-2xl text-xl shadow-xl active:scale-95 transition-all"
+                            >
+                                እንደገና ጀምር
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (currentStep === 'start') {
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-6 bg-slate-950">
+                        <div className="max-w-md w-full bg-white rounded-[3rem] p-12 text-center shadow-2xl">
+                            <div className="w-20 h-20 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg">
+                                <Icon name="BookOpen" size={40} className="text-white" />
+                            </div>
+                            <h1 className="text-3xl font-black mb-4">ምሉእ ናይ ቲዮሪ ፈተና</h1>
+                            <p className="text-slate-500 mb-10">70 ሕቶታት ምስ ቅልጡፍ AI ምስልታት።</p>
+                            <button 
+                                onClick={() => setCurrentStep('quiz')} 
+                                className="w-full bg-indigo-600 text-white font-bold py-5 rounded-2xl text-xl shadow-xl active:scale-95 transition-all"
+                            >
+                                ጀምር
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            const currentImg = imageCache[currentIdx];
+
+            return (
+                <div className="min-h-screen bg-slate-50 p-4 md:p-8 flex flex-col items-center">
+                    <div className="max-w-2xl w-full bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200">
+                        <div className="image-container aspect-video flex items-center justify-center bg-slate-100">
+                            {currentImg ? (
+                                <img src={currentImg} className="w-full h-full object-cover fade-in" />
+                            ) : (
+                                <div className="flex flex-col items-center gap-4">
+                                    <div className="loader"></div>
+                                    <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest animate-pulse">AI Scene Building...</span>
+                                </div>
+                            )}
+                            <div className="absolute top-4 left-4 bg-indigo-600 px-3 py-1 rounded-full text-[10px] text-white font-black uppercase tracking-widest shadow-lg">
+                                Dynamic AI
+                            </div>
+                        </div>
+
+                        <div className="p-8 md:p-10">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="h-2 flex-1 bg-slate-100 rounded-full overflow-hidden">
+                                    <div className="h-full bg-indigo-600 transition-all duration-500" style={{ width: `${((currentIdx + 1) / allQuestions.length) * 100}%` }}></div>
+                                </div>
+                                <span className="text-xs font-black text-slate-400">{currentIdx + 1}/{allQuestions.length}</span>
+                            </div>
+                            
+                            <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-8 leading-tight">{allQuestions[currentIdx].q}</h2>
+                            <div className="grid gap-3">
+                                {allQuestions[currentIdx].a.map((opt, i) => (
+                                    <button
+                                        key={i}
+                                        disabled={answerStatus !== null}
+                                        onClick={() => setAnswerStatus(i === allQuestions[currentIdx].c ? 'correct' : 'wrong')}
+                                        className={`w-full p-5 text-left rounded-2xl border-2 font-bold transition-all text-base ${
+                                            answerStatus === null 
+                                                ? 'border-slate-50 bg-slate-50 hover:border-indigo-400 hover:bg-white' 
+                                                : i === allQuestions[currentIdx].c 
+                                                    ? 'border-green-500 bg-green-50 text-green-700' 
+                                                    : 'border-slate-50 opacity-40'
+                                        }`}
+                                    >
+                                        {opt}
+                                    </button>
+                                ))}
+                            </div>
+                            
+                            {answerStatus && (
+                                <button 
+                                    onClick={() => {
+                                        setAnswerStatus(null);
+                                        if (currentIdx < allQuestions.length - 1) setCurrentIdx(currentIdx + 1);
+                                        else setCurrentStep('payment');
+                                    }}
+                                    className="mt-8 w-full bg-slate-900 text-white py-5 rounded-2xl font-black flex items-center justify-center gap-2 shadow-xl hover:bg-black transition-colors"
+                                >
+                                    ዝቕጽል ሕቶ <Icon name="ArrowRight" size={20} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
