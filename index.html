@@ -49,12 +49,12 @@
 
         function App() {
             const [allQuestions] = useState([
-                { q: "ደረጃ ንቡር ስኽራት (rattfylleri) ካብ ክንደይ ፕሮሚለ (‰) ይጅምር?", a: ["0.1 ‰", "0.2 ‰", "0.5 ‰", "1.0 ‰"], c: 1, prompt: "Police officer breathalyzer test night" },
-                { q: "ደረጃ ብርቱዕ ስኽራት (grovt rattfylleri) ካብ ክንደይ ፕሮሚለ (‰) ይጅምር?", a: ["0.5 ‰", "0.8 ‰", "1.0 ‰", "2.0 ‰"], c: 2, prompt: "Drunk driving scene high alert" },
+                { q: "ደረጃ ንቡር ስኽራን (rattfylleri) ካብ ክንደይ ፕሮሚለ (‰) ይጅምር?", a: ["0.1 ‰", "0.2 ‰", "0.5 ‰", "1.0 ‰"], c: 1, prompt: "Police officer breathalyzer test night" },
+                { q: "ደረጃ ብርቱዕ ስኽራን (grovt rattfylleri) ካብ ክንደይ ፕሮሚለ (‰) ይጅምር?", a: ["0.5 ‰", "0.8 ‰", "1.0 ‰", "2.0 ‰"], c: 2, prompt: "Drunk driving scene high alert" },
                 { q: "ትሕቲ 15 ዓመት ንዘለዉ ህጻናት፡ ቀበቶ ናይ ምእሳር ሓላፍነት ናይ መን እዩ?", a: ["ናይቲ ህጻን", "ናይቲ ዘዋሪ", "ናይቲ ወላዲ (ኣብታ መኪና እንተሃልዩ ጥራይ)", "ሓላፍነት የለን"], c: 1, prompt: "Child in car seat buckle" },
                 { q: "ኣብ ክረምቲ (ካብ 1 ታሕሳስ ክሳብ 31 መጋቢት) ዝተሓተ ዓሚቝ ስፌት (mönsterdjup) ጎማ ክንደይ ክኸውን ኣለዎ?", a: ["1.6 mm", "3.0 mm", "4.0 mm", "1.0 mm"], c: 1, prompt: "Winter tire tread depth measure" },
                 { q: "ኣብ ሓጋይ (Sommar) ዝተሓተ ዓሚቝ ስፌት ጎማ ክንደይ ክኸውን ኣለዎ?", a: ["1.0 mm", "1.6 mm", "3.0 mm", "4.0 mm"], c: 1, prompt: "Summer tire tread depth" },
-                { q: "ጎማታት ብስማር (Dubbdäck) ምጥቃም ካብ መዓስ ክሳብ መዓስ ክልኩል እዩ (ኩነታት ኣየር ጽቡቕ እንተኾይኑ)?", a: ["1 ጥቅምቲ - 15 ሚያዝያ", "16 ሚያዝያ - 30 መስከረም", "1 ታሕሳስ - 31 መጋቢት", "ምሉእ ዓመት ፍቁድ እዩ"], c: 1, prompt: "Studded tires road sign" },
+                { q: "ጎማታት ብመስማር (Dubbdäck) ምጥቃም ካብ መዓስ ክሳብ መዓስ ክልኩል እዩ (ኩነታት ኣየር ጽቡቕ እንተኾይኑ)?", a: ["1 ጥቅምቲ - 15 ሚያዝያ", "16 ሚያዝያ - 30 መስከረም", "1 ታሕሳስ - 31 መጋቢት", "ምሉእ ዓመት ፍቁድ እዩ"], c: 1, prompt: "Studded tires road sign" },
                 { q: "መኪናኻ ደው ኣቢልካ ክትወርድ ከለኻ፡ መፍትሕ ኣብታ መኪና ክትሓድጎ ፍቁድ ድዩ?", a: ["እወ፡ እታ መኪና ተዓጽያ እንተሃልያ", "እወ፡ ንሓጺር ግዜ ጥራይ እንተኾይኑ", "ኣይፋልን፡ ብሕጊ ክልኩል እዩ", "እወ፡ ህጻናት ኣብታ መኪና እንተዘይሃልዮም"], c: 2, prompt: "Empty car with keys in ignition" },
                 { q: "ኣብ ከባቢ መሳገሪ እግረኛታት (övergångsställe) ክንደይ ሜትሮ ቅድሚኡ ደው ምባል ወይ ፓርክ ምግባር ክልኩል እዩ?", a: ["5 ሜትሮ", "10 ሜትሮ", "15 ሜትሮ", "20 ሜትሮ"], c: 1, prompt: "Pedestrian crossing parking rule" },
                 { q: "ሓደ ህጻን ኤርባግ (krockkudde) ኣብ ዘለዎ ናይ ቅድሚት ኮፍ መበሊ ክቕመጥ ዝኽእል፡ ቁመቱ እንተወሓደ ክንደይ ምስ ዝኸውን እዩ?", a: ["135 ሴ.ሜ", "140 ሴ.ሜ", "150 ሴ.ሜ", "120 ሴ.ሜ"], c: 1, prompt: "Child height car safety front seat" },
