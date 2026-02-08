@@ -300,28 +300,31 @@
         root.render(<App />);
     </script>
 </body><script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-  import { 
-    getFirestore, collection, addDoc, getDocs,
-    doc, updateDoc, getDoc
-  } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+  // Firebase imports
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js";
+  import {
+    getFirestore, collection, addDoc, getDoc,
+    doc, updateDoc, getDocs
+  } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-firestore.js";
 
+  // Your Firebase config
   const firebaseConfig = {
-    apiKey: "...",
-    authDomain: "...",
-    projectId: "...",
-    storageBucket: "...",
-    messagingSenderId: "...",
-    appId: "..."
+    apiKey: "AIzaSyAUcVgTFwAitpxlNc0Ej3TF_NrK1q8XOd8",
+    authDomain: "theory-app-940e9.firebaseapp.com",
+    projectId: "theory-app-940e9",
+    storageBucket: "theory-app-940e9.appspot.com",
+    messagingSenderId: "922344725801",
+    appId: "1:922344725801:web:6e657477462889f5b2ab38"
   };
 
+  // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // ⭐ Add this line — your progress document reference
+  // ⭐ Reference to your progress document
   const progressRef = doc(db, "progress", "NaADCuBbKcVedfNu6Ir0");
 
-  // ⭐ Save progress function
+  // ⭐ Save progress automatically
   async function saveProgress(currentQuestion, score) {
     await updateDoc(progressRef, {
       currentQuestion: currentQuestion,
@@ -330,7 +333,7 @@
     });
   }
 
-  // ⭐ Load progress function
+  // ⭐ Load progress when quiz starts
   async function loadProgress() {
     const snap = await getDoc(progressRef);
     if (snap.exists()) {
@@ -338,5 +341,21 @@
     }
     return null;
   }
+
+  // ⭐ Auto‑load progress into your React quiz
+  window.loadUserProgress = async function(setCurrentQuestion, setScore) {
+    const data = await loadProgress();
+    if (data) {
+      setCurrentQuestion(data.currentQuestion);
+      setScore(data.score);
+    }
+  };
+
+  // ⭐ Auto‑save progress from React
+  window.autoSave = function(currentQuestion, score) {
+    saveProgress(currentQuestion, score);
+  };
 </script>
+
+
 </html>
