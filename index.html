@@ -301,8 +301,10 @@
     </script>
 </body><script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs } 
-    from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+  import { 
+    getFirestore, collection, addDoc, getDocs,
+    doc, updateDoc, getDoc
+  } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "...",
@@ -315,5 +317,26 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
+
+  // ⭐ Add this line — your progress document reference
+  const progressRef = doc(db, "progress", "NaADCuBbKcVedfNu6Ir0");
+
+  // ⭐ Save progress function
+  async function saveProgress(currentQuestion, score) {
+    await updateDoc(progressRef, {
+      currentQuestion: currentQuestion,
+      score: score,
+      timestamp: Date.now()
+    });
+  }
+
+  // ⭐ Load progress function
+  async function loadProgress() {
+    const snap = await getDoc(progressRef);
+    if (snap.exists()) {
+      return snap.data();
+    }
+    return null;
+  }
 </script>
 </html>
